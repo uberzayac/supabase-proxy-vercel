@@ -1,1 +1,948 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>мой Дашборд 2.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
+    body {
+      background: linear-gradient(145deg, #f4f6fc 0%, #eef2f8 100%);
+      font-family: system-ui, -apple-system, 'Segoe UI', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      padding: 32px 24px 100px 24px;
+      min-height: 100vh;
+      color: #1a2c3e;
+    }
+
+    .main-container {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* ШАПКА */
+    .dashboard-header {
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 0 8px;
+    }
+    .left-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .title-section {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .dashboard-header h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #1e3c4c, #2b5c74);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+.add-card-btn {
+  position: relative;
+  display: inline-block;
+  margin: 5px;
+  padding: 8px 25px;
+  text-align: center;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: #725AC1;
+  background: transparent;
+  cursor: pointer;
+  transition: ease-out 0.5s;
+  border: 2px solid #725AC1;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 0 #725AC1;
+}
+
+.plus-icon {
+  font-size: 1.3rem;      /* Увеличивает размер */
+  font-weight: 900;       /* Делает жирнее/толще */
+  display: inline-block;
+  margin-right: 5px;      /* Отступ от текста */
+  line-height: 0.7;         /* Выравнивание по вертикали */
+  transform: translateY(+1.5px); /* Тонкая подстройка по вертикали */
+}
+
+.add-card-btn:hover {
+  color: white;
+  box-shadow: inset 0 -100px 0 0 #725AC1;
+}
+
+.add-card-btn:active {
+  background: #725AC1;
+  color: white;
+}
+
+    .edit-mode-btn {
+      position: relative;
+      display: inline-block;
+      margin: 5px;
+      padding: 8px 25px;
+      text-align: center;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      text-decoration: none;
+      color: #725AC1;
+      background: transparent;
+      cursor: pointer;
+      transition: ease-out 0.5s;
+      border: 2px solid #725AC1;
+      border-radius: 10px;
+      box-shadow: inset 0 0 0 0 #725AC1;
+    }
+    .edit-mode-btn.active {
+      background: #725AC1;
+      color: white;
+    }
+    .edit-mode-btn:hover {
+      color: white;
+      box-shadow: inset 0 -100px 0 0 #725AC1;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    /* АВАТАР */
+    .avatar-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatar-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e0e8f0, #cbdae5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 2px solid white;
+      overflow: hidden;
+      position: relative;
+    }
+    .avatar-circle:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    .avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-placeholder {
+      font-size: 2.5rem;
+      opacity: 0.6;
+    }
+    
+    /* Модалка выбора аватара */
+    .avatar-modal .modal-window {
+      max-width: 480px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .avatar-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 8px;
+      flex: 1;
+    }
+    .avatar-gallery::-webkit-scrollbar {
+      width: 6px;
+    }
+    .avatar-gallery::-webkit-scrollbar-track {
+      background: #e2eaf1;
+      border-radius: 10px;
+    }
+    .avatar-gallery::-webkit-scrollbar-thumb {
+      background: #2c7a97;
+      border-radius: 10px;
+    }
+    .avatar-option {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: 0.2s;
+      overflow: hidden;
+      background: #f0f4f9;
+    }
+    .avatar-option img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-option:hover {
+      transform: scale(1.05);
+      border-color: #2c7a97;
+    }
+    .avatar-option.selected {
+      border-color: #2c7a97;
+      box-shadow: 0 0 0 2px white, 0 0 0 4px #2c7a97;
+    }
+    .avatar-modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e2eaf0;
+    }
+    .avatar-modal-buttons button {
+      background: #eef2f8;
+      border: 1px solid #cbdde6;
+      padding: 8px 20px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .avatar-modal-buttons button.primary {
+      background: #2c7a97;
+      color: white;
+      border: none;
+    }
+    
+    .logo-area {
+      max-width: 140px;
+      display: flex;
+      align-items: center;
+    }
+    .logo-area img {
+      width: 100%;
+      max-width: 130px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* СЕТКА КАРТОЧЕК */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* СТИЛИ КАРТОЧЕК */
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(2px);
+      border-radius: 36px;
+      box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.02);
+      padding: 24px 26px;
+      transition: all 0.25s ease;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      cursor: grab;
+      user-select: none;
+      position: relative;
+    }
+    .card:active {
+      cursor: grabbing;
+    }
+    .card.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    .card:hover {
+      box-shadow: 0 20px 32px -12px rgba(0, 0, 0, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .card.hidden-card {
+      display: none !important;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      border-bottom: 1.5px solid #e9edf2;
+      padding-bottom: 14px;
+      cursor: grab;
+    }
+    .card-header h2 {
+      font-size: 1.6rem;
+      font-weight: 520;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, #1e3c4c, #2b5c74);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .card-header .emoji {
+      font-size: 1.8rem;
+    }
+    .edit-header-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 30px;
+      opacity: 0.6;
+      display: none;
+    }
+    .edit-mode .edit-header-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px dashed #b0c8da;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 0.9rem;
+    }
+    .edit-header-btn:hover {
+      opacity: 1;
+      background: #eef6fc;
+      transform: scale(1.05);
+      border-style: solid;
+    }
+    .delete-card-btn {
+      background: rgba(255,200,200,0.5);
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 30px;
+      transition: 0.2s;
+      opacity: 0.7;
+      margin-left: 0px;
+      display: none;
+    }
+    .edit-mode .delete-card-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px dashed #ffaaaa;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+    }
+    .delete-card-btn:hover {
+      opacity: 1;
+      background: #ffe0e0;
+      border-style: solid;
+    }
+    .datetime-section {
+      text-align: center;
+      padding: 0px 0 4px;
+    }
+    .greeting-text {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #2c7a97;
+      margin-right: 15%;
+      margin-bottom: 18px;
+    }
+    .vibe-section {
+      padding-top: 12px;
+    }
+    .nickname-display {
+      vertical-align: middle;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #2c7a97;
+      background: linear-gradient(135deg, #eef6fc, #ffffff);
+      padding: 8px 20px 10px;
+      border-radius: 60px;
+      display: inline-block;
+      margin: 8px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .refresh-btn {
+      background: #eef2f8;
+      border: 1px solid #cbdde6;
+      padding: 6px 16px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: 0.2s;
+      color: #2a5a70;
+      font-weight: 500;
+      margin-left: 12px;
+    }
+    .date-hint {
+      font-size: 0.7rem;
+      color: #8ba3b6;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .links-group {
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .group-title {
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #5d7188;
+      margin-bottom: 14px;
+      border-left: 3px solid #73b1c5;
+      padding-left: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .edit-group-btn {
+      background: none;
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      opacity: 0.6;
+      padding: 4px 8px;
+      border-radius: 20px;
+      display: none;
+    }
+    .edit-mode .edit-group-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px dashed #b0c8da;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 0.8rem;
+    }
+    .edit-group-btn:hover {
+      opacity: 1;
+      background: #eef6fc;
+      transform: scale(1.05);
+      border-style: solid;
+    }
+    .delete-group-btn {
+      background: none;
+      border: none;
+      font-size: 0.8rem;
+      cursor: pointer;
+      opacity: 0.6;
+      padding: 4px 8px;
+      border-radius: 20px;
+      display: none;
+      margin-left: 4px;
+    }
+    .edit-mode .delete-group-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px dashed #ffaaaa;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 0.7rem;
+    }
+    .delete-group-btn:hover {
+      opacity: 1;
+      background: #ffe0e0;
+      border-style: solid;
+    }
+    .links-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .link-btn {
+      display: inline-flex;
+      gap: 8px;
+      background: #ffffff;
+      border-radius: 60px;
+      padding: 8px 18px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #1f3e4b;
+      text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .link-btn:hover {
+      background: #f0f6fe;
+      border-color: #bdd3e2;
+      transform: translateY(-2px);
+    }
+    .edit-links-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: #ffffff;
+      border-radius: 50%;
+      border: 1px dashed #b0c8da;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.2s;
+      margin-left: 4px;
+      display: none;
+      opacity: 0.6;
+    }
+    .edit-mode .edit-links-icon {
+      display: inline-flex;
+    }
+    .edit-links-icon:hover {
+      opacity: 1;
+      background: #eef6fc;
+      transform: scale(1.05);
+      border-style: solid;
+    }
+    .add-group-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #eef2f8;
+      border: 1px dashed #2c7a97;
+      border-radius: 40px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #2c7a97;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 12px;
+      display: none;
+    }
+    .edit-mode .add-group-btn {
+      display: inline-flex;
+    }
+    .add-group-btn:hover {
+      background: #e2eaf1;
+      border-style: solid;
+    }
+    .water-tracker {
+      margin-top: 8px;
+    }
+    .water-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: #2c647c;
+    }
+    .progress-bar-bg {
+      background: #e2eaf1;
+      border-radius: 50px;
+      height: 12px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #48b5d0, #2c7f9e);
+      width: 0%;
+      height: 100%;
+      border-radius: 50px;
+      transition: width 0.2s ease;
+    }
+    .water-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .water-btn {
+      background: white;
+      border: 1px solid #cbdde6;
+      padding: 8px 16px;
+      border-radius: 48px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.85rem;
+      color: #2a5a70;
+    }
+    .water-btn.reset-btn {
+      background: #fef2e8;
+      border-color: #f0cfbc;
+      color: #b1623b;
+    }
+    .goal-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .goal-input {
+      background: white;
+      border: 1px solid #cbdde6;
+      border-radius: 48px;
+      padding: 3px 15px;
+      width: 80px;
+      font-size: 0.8rem;
+      font-family: inherit;
+    }
+    .notes-main {
+      width: 100%;
+    }
+    .notes-area {
+      width: 100%;
+      background: #ffffffd9;
+      border: 1px solid #e2ecf3;
+      border-radius: 24px;
+      padding: 16px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      color: #1f3e4b;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+    .extra-notes-container {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .extra-note-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .extra-note-item textarea {
+      flex: 1;
+      background: #ffffffd9;
+      border: 1px solid #e2ecf3;
+      border-radius: 20px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      resize: vertical;
+    }
+    .remove-note-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #b48c6c;
+      padding: 8px;
+      border-radius: 30px;
+    }
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .add-note-btn {
+      background: #eef2f8;
+      border: 1px solid #cbdde6;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #2a5a70;
+      font-weight: 500;
+    }
+
+    /* Нижняя панель */
+    .bottom-control-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(203, 221, 230, 0.6);
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.05);
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .menu-handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 24px 24px 0 0;
+      font-weight: 550;
+      font-size: 0.9rem;
+      color: #2c7a97;
+      transition: 0.2s;
+      border-bottom: 1px solid rgba(203, 221, 230, 0.5);
+    }
+    .menu-handle:hover {
+      background: #eef6fc;
+    }
+    .handle-arrow {
+      font-size: 0.9rem;
+      transition: transform 0.2s;
+    }
+    .bar-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px 24px;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    .cards-control-group {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .badge-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 550;
+      font-size: 0.85rem;
+      color: #2c647c;
+      padding: 5px 14px;
+      border-radius: 40px;
+    }
+    .toggle-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border-radius: 60px;
+      padding: 6px 16px 6px 14px;
+      border: 1px solid #cbdde6;
+      cursor: pointer;
+      transition: 0.15s;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #1f3e4b;
+    }
+    .toggle-chip:hover {
+      background: #eef6fc;
+      transform: translateY(-1px);
+    }
+    .toggle-chip .chip-emoji {
+      font-size: 1.1rem;
+    }
+    .toggle-chip.active-chip {
+      background: #d8f1f385;
+      border: 2px solid #2c7a97;
+      color: #1f3e4b;
+      box-shadow: 0 4px 5px rgba(44, 122, 151, 0.3);
+    }
+    .reset-all-btn {
+      background: #f0f4f9;
+      border: 1px solid #cbdde6;
+      border-radius: 60px;
+      padding: 6px 18px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #2a5a70;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .reset-all-btn:hover {
+      background: #e2eaf1;
+      transform: scale(0.97);
+    }
+    
+    /* СВЁРНУТОЕ СОСТОЯНИЕ НИЖНЕЙ ПАНЕЛИ */
+    .bottom-control-bar.collapsed .bar-container {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px);
+    }
+    .bottom-control-bar.collapsed .menu-handle {
+      border-bottom: none;
+    }
+    
+    @media (max-width: 780px) {
+      body { padding: 20px 16px 70px 16px; }
+      .card { padding: 20px; }
+      .avatar-circle { width: 60px; height: 60px; }
+      .left-header { gap: 12px; }
+      .avatar-gallery { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 12px; }
+      .bar-container { transition: all 0.3s ease; overflow: hidden; }
+      .cards-control-group { justify-content: center; }
+      .toggle-chip { padding: 5px 12px; font-size: 0.75rem; }
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-window {
+      background: white;
+      border-radius: 32px;
+      max-width: 500px;
+      width: 90%;
+      padding: 28px 24px 24px;
+      text-align: center;
+      box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2);
+    }
+    .links-editor-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    .links-editor-table th, .links-editor-table td {
+      border: 1px solid #dce5ec;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .links-editor-table input {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #cbdde6;
+      border-radius: 12px;
+      font-size: 0.8rem;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+            align-items: baseline;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .modal-ok-btn {
+      background: #2c7a97;
+      border: none;
+      padding: 10px 45px;
+      margin-right: 30px;
+        margin-top: 40px;
+      border-radius: 60px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+    }
+    .modal-cancel-btn {
+      background: #eef2f8;
+      border: 1px solid #cbdde6;
+      padding: 10px 24px;
+      border-radius: 60px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2a5a70;
+      cursor: pointer;
+    }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.7rem;
+      color: #8ba0b6;
+    }
+  </style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="dashboard-header">
+    <div class="left-header">
+      <div class="avatar-container">
+        <div class="avatar-circle" id="avatarButton">
+          <img id="avatarImage" src="" alt="аватар" style="display: none;">
+          <span id="avatarPlaceholder" class="avatar-placeholder">👤</span>
+        </div>
+      </div>
+      <div class="title-section">
+<h1>⭐ мой Дашборд <span style="font-size: 0.7rem;">ver 2.0</span></h1>
+      </div>
+    </div>
+    <div class="header-buttons">
+<button class="add-card-btn" id="addNewCardBtn">
+  <span class="plus-icon">+</span> Новая карточка
+</button>
+      <button class="edit-mode-btn" id="editModeBtn">✏️ Режим редактирования</button>
+      <div class="logo-area">
+        <img src="" alt="логотип" style="max-width: 120px; width: auto; height: auto;" onerror="this.style.display='none'">
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard" id="dashboardGrid"></div>
+  <footer>✨ Перетаскивайте карточки — порядок сохраняется. Нажмите на аватар, чтобы выбрать фото. ✏️ Режим редактирования — включает режим правки. Обновить - Ctrl+F5</footer>
+</div>
+
+<div class="bottom-control-bar collapsed" id="bottomControlBar">
+  <div class="menu-handle" id="menuHandle">
+    <span>🎛️</span> <span>Управление карточками</span>
+    <span class="handle-arrow" id="handleArrow">▲</span>
+  </div>
+  <div class="bar-container" id="barContainer">
+    <div class="badge-label"><span>🎛️</span> <span>Видимость карточек</span></div>
+    <div class="cards-control-group" id="dynamicChipsContainer"></div>
+    <button class="reset-all-btn" id="globalResetBtn">⟳ Показать все</button>
+  </div>
+</div>
+
+<div id="yandexModal" class="modal-overlay"><div class="modal-window"><p>Яндекс доставку заказываем с красного офисного телефона ☎️</p><button class="modal-ok-btn" id="modalCloseBtn">Ясно</button></div></div>
+<div id="avatarModal" class="modal-overlay avatar-modal"><div class="modal-window"><h3 style="margin-bottom: 12px;">Выберите аватар</h3><div class="avatar-gallery" id="avatarGallery"></div><div class="avatar-modal-buttons"><button id="avatarCancelBtn">Отмена</button><button id="avatarClearBtn" class="primary">Удалить аватар</button></div></div></div>
+
+<div id="linksEditorModal" class="modal-overlay"><div class="modal-window"><h3 id="linksEditorTitle">Редактирование</h3><div id="linksEditorTableArea"></div><div class="modal-buttons"><button class="modal-ok-btn" id="linksEditorOkBtn">ОК</button><button class="modal-cancel-btn" id="linksEditorCancelBtn">Отмена</button></div></div></div>
+
+<!-- Подключаем внешний JavaScript файл -->
+<script src="eng_terms.js"></script>
+<script src="script12.js"></script>
+
+</body>
+</html>
