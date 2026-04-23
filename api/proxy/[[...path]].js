@@ -1,67 +1,63 @@
-// api/proxy/[[...path]].js
-export const config = {
-  runtime: 'edge', // Edge-функция — быстрее и дешевле
-};
+// api/[[...path]].js
+export const config = { runtime: 'edge' };
 
-const SUPABASE_ORIGIN = 'https://broad-mode-2ec8.hse-ermakova.workers.dev';
+// Ваш реальный Supabase-проект (из вашего JWT)
+const TARGET = 'https://yusvsnpjvbjntafzownp.supabase.co';
 
 export default async function handler(req) {
-  const { pathname, search } = new URL(req.url);
-  // Извлекаем путь после /api/proxy/
-  const path = pathname.replace(/^\/api\/proxy/, '');
-  const targetUrl = `${SUPABASE_ORIGIN}${path}${search || ''}`;
+  const url = new URL(req.url);
+  // Убираем /api из пути, чтобы получить чистый REST-путь Supabase
+  const path = url.pathname.replace(/^\/api/, '') + url.search;
+  const targetUrl = `${TARGET}${path}`;
 
-  // Копируем заголовки запроса (кроме hop-by-hop)
+  // Копируем заголовки клиента, исключая hop-by-hop
   const headers = new Headers();
-  req.headers.forEach((value, key) => {
-    if (!['host', 'connection'].includes(key.toLowerCase())) {
+  for (const [key, value] of req.headers.entries()) {
+    const k = key.toLowerCase();
+    if (!['host', 'connection', 'cf-connecting-ip', 'cf-ray', 'x-forwarded-for'].includes(k)) {
       headers.set(key, value);
     }
-  });
-  // Явно указываем хост оригинала
-  headers.set('Host', new URL(SUPABASE_ORIGIN).host);
+  }
+  headers.set('Host', new URL(TARGET).host);
 
-  try {
-    const response = await fetch(targetUrl, {
-      method: req.method,
-      headers,
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? await req.text() : undefined,
-    });
-
-    // Формируем ответ с правильными CORS-заголовками
-    const responseHeaders = new Headers();
-    response.headers.forEach((value, key) => {
-      if (!['transfer-encoding', 'connection'].includes(key.toLowerCase())) {
-        responseHeaders.set(key, value);
+  // Обработка preflight-запросов (CORS)
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,apikey,Prefer,X-Client-Info,Accept,Range',
+        'Access-Control-Max-Age': '86400'
       }
     });
-    
-    // 🔥 ВАЖНО: разрешаем CORS для любого источника
-    responseHeaders.set('Access-Control-Allow-Origin', '*');
-    responseHeaders.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, Prefer, X-Client-Info');
+  }
 
-    // Обрабатываем preflight-запросы
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: responseHeaders,
-      });
-    }
-
-    return new Response(response.body, {
-      status: response.status,
-      headers: responseHeaders,
+  try {
+    const res = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined
     });
 
-  } catch (error) {
-    console.error('Proxy error:', error);
+    const resHeaders = new Headers();
+    for (const [key, value] of res.headers.entries()) {
+      const k = key.toLowerCase();
+      if (!['transfer-encoding', 'connection', 'content-encoding'].includes(k)) {
+        resHeaders.set(key, value);
+      }
+    }
+    // Разрешаем CORS для браузера
+    resHeaders.set('Access-Control-Allow-Origin', '*');
+
+    return new Response(res.body, {
+      status: res.status,
+      headers: resHeaders
+    });
+  } catch (err) {
     return new Response(JSON.stringify({ error: 'Proxy failed' }), {
       status: 502,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
   }
 }
