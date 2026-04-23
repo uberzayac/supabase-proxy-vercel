@@ -1,6 +1,0 @@
-supabase-proxy-vercel/
-├── api/
-│   └── proxy/
-│       └── [[...path]].js    ← этот файл мы создадим
-├── package.json
-└── vercel.json               ← конфиг для CORS
