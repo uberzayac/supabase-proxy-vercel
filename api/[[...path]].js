@@ -7,12 +7,10 @@ const TARGET = 'https://yusvsnpjvbjntafzownp.supabase.co';
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  
-  // Убираем /api из пути
   const path = url.pathname.replace(/^\/api/, '') + url.search;
   const targetUrl = `${TARGET}${path}`;
 
-  // 🔥 ОБЯЗАТЕЛЬНО: preflight запрос
+  // Preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -25,48 +23,47 @@ export default async function handler(request) {
     });
   }
 
-  // 🔥 Копируем ВСЕ заголовки включая apikey
+  // Копируем заголовки
   const headers = new Headers();
   request.headers.forEach((value, key) => {
-    // Пропускаем только hop-by-hop заголовки
-    const skipHeaders = ['host', 'connection', 'cf-connecting-ip', 'cf-ray', 'x-forwarded-for', 'x-forwarded-proto', 'x-real-ip', 'content-length'];
-    if (!skipHeaders.includes(key.toLowerCase())) {
+    const skip = ['host', 'connection', 'cf-connecting-ip', 'cf-ray', 'x-forwarded-for', 'x-forwarded-proto', 'x-real-ip', 'content-length'];
+    if (!skip.includes(key.toLowerCase())) {
       headers.set(key, value);
     }
   });
-  
-  // Явно устанавливаем хост Supabase
   headers.set('Host', new URL(TARGET).host);
 
   try {
-    // 🔥 Получаем тело запроса
+    // 🔥 Читаем тело запроса ТОЛЬКО если нужно
     let body = null;
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      body = await request.text();
+    if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+      body = await request.clone().text();
     }
 
+    // Запрос к Supabase
     const response = await fetch(targetUrl, {
       method: request.method,
       headers,
       body,
-      redirect: 'manual',
     });
 
+    // 🔥 Читаем ответ как текст/JSON
+    const responseText = await response.text();
+    
     // Копируем заголовки ответа
     const responseHeaders = new Headers();
     response.headers.forEach((value, key) => {
-      const skipHeaders = ['transfer-encoding', 'connection', 'content-encoding'];
-      if (!skipHeaders.includes(key.toLowerCase())) {
+      const skip = ['transfer-encoding', 'connection', 'content-encoding', 'content-length'];
+      if (!skip.includes(key.toLowerCase())) {
         responseHeaders.set(key, value);
       }
     });
 
-    // 🔥 ДОБАВЛЯЕМ CORS заголовки
+    // CORS заголовки
     responseHeaders.set('Access-Control-Allow-Origin', '*');
-    responseHeaders.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, Prefer, X-Client-Info, Accept, Range, X-Supabase-Team, sdk-version, x-client-info, x-supabase-api-version');
+    responseHeaders.set('Content-Type', response.headers.get('Content-Type') || 'application/json');
 
-    return new Response(response.body, {
+    return new Response(responseText, {
       status: response.status,
       statusText: response.statusText,
       headers: responseHeaders,
