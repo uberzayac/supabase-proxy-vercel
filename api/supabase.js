@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const supabaseUrl = `https://ВАШ_ПРОЕКТ.supabase.co${req.url}`;
+  const supabaseUrl = `https://yusvsnpjvbjntafzownp.supabase.co${req.url}`;
   
   const response = await fetch(supabaseUrl, {
     method: req.method,
