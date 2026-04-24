@@ -1,6 +1,6 @@
 (function() {
 // ========== SUPABASE CONFIGURATION ==========
-const SUPABASE_URL = 'https://yusvsnpjvbjntafzownp.supabase.co';
+const SUPABASE_URL = 'https://dashboard-omega-ten-14.vercel.app/api';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1c3ZzbnBqdmJqbnRhZnpvd25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTkzNjMsImV4cCI6MjA5MTA3NTM2M30.Y202QpgUCKMi5HGObvTWujQUxmP6XRP3K3nEldR5NXQ';
 let supabase;
 let currentUser = null;
